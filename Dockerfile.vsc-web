@@ -1,0 +1,50 @@
+FROM thienptran/win1803-ds:v1
+
+# Download the Build Tools bootstrapper outside of the PATH.
+#ADD https://aka.ms/vs/15/release/vs_community.exe C:\\TEMP\\vs_community.exe
+
+ADD artifacts/nuget.exe C:\\Nuget\\nuget.exe
+ADD artifacts/vs_community.exe C:\\temp\\vs_community.exe
+
+
+#Update PATH environment variables
+RUN powershell -Command \
+    $path =  'C:\nuget;' + $env:path ; \
+    Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment' -Name Path -Value $path ; \
+    refreshenv
+
+####
+#    MSBuild Components
+####
+RUN C:\\TEMP\\vs_community.exe --wait --quiet --norestart --nocache --installPath C:\BuildTools \
+    --add Microsoft.Component.MSBuild \
+    --add Microsoft.VisualStudio.Component.NuGet.BuildTools \
+    --add Microsoft.VisualStudio.Component.CoreBuildTools \
+    --add Microsoft.VisualStudio.Component.Roslyn.Compiler \
+    || IF "%ERRORLEVEL%"=="3010" EXIT 0
+
+####
+#   .Net
+####
+RUN C:\\TEMP\\vs_community.exe modify --wait --quiet --norestart --nocache --installPath C:\BuildTools \
+    --add Microsoft.VisualStudio.Component.VSSDK \
+    --add Microsoft.Net.Core.Component.SDK \
+    --add Microsoft.NetCore.ComponentGroup.Web \
+    --add Microsoft.NetCore.ComponentGroup.DevelopmentTools \
+    --add Microsoft.Component.NetFX.Core.Runtime \
+    --add Microsoft.Net.Component.4.5.TargetingPack \
+    --add Microsoft.VisualStudio.Component.PortableLibrary \
+    --add Microsoft.Net.Component.4.6.SDK \
+    --add Microsoft.Net.Component.4.6.TargetingPack \
+    --add Microsoft.Net.Component.4.6.2.SDK \
+    --add Microsoft.Net.ComponentGroup.TargetingPacks.Common \
+    --add Microsoft.Net.Component.4.6.2.TargetingPack \
+    --add Microsoft.VisualStudio.Component.VC.Tools.14.11 \
+    || IF "%ERRORLEVEL%"=="3010" EXIT 0
+
+WORKDIR /data
+
+# Start developer command prompt with any other commands specified.
+ENTRYPOINT C:\BuildTools\Common7\Tools\VsDevCmd.bat &&
+
+CMD [ "ping localhost -t" ]

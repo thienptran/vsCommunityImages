@@ -1,0 +1,24 @@
+FROM thienptran/vsc-web:v0
+
+####
+#   UWP
+####
+RUN C:\\TEMP\\vs_community.exe modify --wait --quiet --norestart --nocache --installPath C:\BuildTools \
+    --add Microsoft.VisualStudio.Workload.Universal \
+####
+#   Windows SDK
+####
+    --add Microsoft.VisualStudio.Component.Windows10SDK.16299.Desktop \
+    --add Microsoft.VisualStudio.Component.Windows81SDK \
+    --add Microsoft.VisualStudio.Component.Windows10SDK.15063.Desktop \
+    --add Microsoft.VisualStudio.Component.Windows10SDK.15063.UWP \
+    --add Microsoft.VisualStudio.Component.Windows10SDK.16299.UWP \
+    --add Microsoft.VisualStudio.Component.Windows10SDK.16299.Desktop.arm \
+    || IF "%ERRORLEVEL%"=="3010" EXIT 0
+
+WORKDIR /data
+
+# Start developer command prompt with any other commands specified.
+ENTRYPOINT C:\BuildTools\Common7\Tools\VsDevCmd.bat &&
+
+CMD [ "ping localhost -t" ]
